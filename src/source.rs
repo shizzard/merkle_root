@@ -1,3 +1,4 @@
+use crate::Hash;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -19,12 +20,13 @@ pub struct SourceReader {
 /// - A hash is a 64 bytes long ASCII string
 /// - A hash is a base16 string
 /// - A hash is a lowercase string
-/// - Hashes are separated by newlines
+/// - Hashes are separated by newlines ('\n')
 ///
 /// Implements Iterator trait <...>
 ///
 /// # Examples
 /// <...>
+#[allow(dead_code)]
 impl SourceReader {
     ///
     /// Creates a new input file reader with the BufReader of default buffer
@@ -39,7 +41,6 @@ impl SourceReader {
     ///
     /// Creates a new input file reader with the BufReader of specified buffer
     /// size.
-    #[allow(dead_code)]
     pub fn with_buffer_capacity(capacity: usize, filename: String) -> Result<Self, Error> {
         let file = File::open(filename)?;
         Ok(Self {
@@ -49,7 +50,7 @@ impl SourceReader {
 }
 
 impl Iterator for SourceReader {
-    type Item = [u8; 32];
+    type Item = Hash;
     fn next(&mut self) -> Option<Self::Item> {
         let mut str_buf = [0u8; 65]; // 65: accomodate for newline
         let mut byte_buf = [0u8; 32];

@@ -6,4 +6,17 @@ edition = "2021"
 [dependencies]
 base16ct = "0.2"
 clap = { version = "4.5", features = ["derive"] }
+criterion = "0.5"
 sha2 = "0.10"
+
+[[bench]]
+name = "benchmark"
+harness = false
+
+[lib]
+name = "merkle_root"
+path = "src/lib.rs"
+
+[[bin]]
+name = "merkle_root"
+path = "src/main.rs"
