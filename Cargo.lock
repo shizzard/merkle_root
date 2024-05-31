@@ -378,6 +378,7 @@ dependencies = [
  "base16ct",
  "clap",
  "criterion",
+ "rayon",
  "sha2",
 ]
 

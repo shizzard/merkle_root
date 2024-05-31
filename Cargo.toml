@@ -7,6 +7,7 @@ edition = "2021"
 base16ct = "0.2"
 clap = { version = "4.5", features = ["derive"] }
 criterion = "0.5"
+rayon = "1.10.0"
 sha2 = "0.10"
 
 [[bench]]

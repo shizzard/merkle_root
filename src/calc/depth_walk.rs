@@ -16,7 +16,7 @@
 //!
 //! The idea is to walk up and down the tree, starting from the lvl1,
 //! calculating the right branch (walk_down) and left branch (walk_up)
-//! recursively. Algorithm terminates when:
+//! recursively, reading the lvl0 hashes on-demand. Algorithm terminates when:
 //! - all branches converged into single hash;
 //! - there are no more source hashes left.
 //!
@@ -34,20 +34,27 @@ impl super::MerkleTreeRoot for DepthWalk {
     fn calculate<I, H, F>(source: &mut Peekable<I>, hash_fn: &F) -> H
     where
         I: Iterator<Item = H>,
-        F: Fn(H, Option<H>) -> H,
+        F: Fn(&H, Option<&H>) -> H,
+        F: Sync + Send,
+        H: Sync + Send,
     {
         let left = source.next().expect("Expected source not to be empty");
-        walk_up(1, left, source, hash_fn)
+        match source.peek() {
+            None => left,
+            Some(_) => walk_up(1, left, source, hash_fn),
+        }
     }
 }
 
 fn walk_up<I, H, F>(height: usize, left: H, source: &mut Peekable<I>, hash_fn: &F) -> H
 where
     I: Iterator<Item = H>,
-    F: Fn(H, Option<H>) -> H,
+    F: Fn(&H, Option<&H>) -> H,
+    F: Sync + Send,
+    H: Sync + Send,
 {
     let right = walk_down(height - 1, source, hash_fn);
-    let hash = hash_fn(left, right);
+    let hash = hash_fn(&left, right.as_ref());
     match source.peek() {
         // source still contains hash to continue
         Some(_) => walk_up(height + 1, hash, source, hash_fn),
@@ -59,7 +66,9 @@ where
 fn walk_down<I, H, F>(height: usize, source: &mut Peekable<I>, hash_fn: &F) -> Option<H>
 where
     I: Iterator<Item = H>,
-    F: Fn(H, Option<H>) -> H,
+    F: Fn(&H, Option<&H>) -> H,
+    F: Sync + Send,
+    H: Sync + Send,
 {
     if height == 0 {
         // we're at the very bottom of the tree, collect the hash from the source
@@ -67,14 +76,12 @@ where
     } else {
         // recurse down once again
         Some(hash_fn(
-            walk_down(height - 1, source, hash_fn)?,
-            walk_down(height - 1, source, hash_fn),
+            &walk_down(height - 1, source, hash_fn)?,
+            walk_down(height - 1, source, hash_fn).as_ref(),
         ))
     }
 }
 
-///
-/// To simplify testing, hashes and hashing function are mocked.
 ///
 /// Hash is a Vec<char>, e.g. vec!['a'].
 ///
@@ -87,12 +94,12 @@ mod tests {
 
     use super::*;
 
-    fn hash(left: Vec<char>, right: Option<Vec<char>>) -> Vec<char> {
+    fn hash(left: &Vec<char>, right: Option<&Vec<char>>) -> Vec<char> {
         let mut ret = Vec::new();
-        ret.extend(&left);
+        ret.extend(left);
         match right {
-            None => ret.extend(&left),
-            Some(right) => ret.extend(&right),
+            None => ret.extend(left),
+            Some(right) => ret.extend(right),
         }
         ret
     }
@@ -121,7 +128,7 @@ mod tests {
     #[test]
     fn partial_tree() {
         let mut source = vec![vec!['a']].into_iter().peekable();
-        assert_eq!(vec!['a', 'a'], DepthWalk::calculate(&mut source, &hash));
+        assert_eq!(vec!['a'], DepthWalk::calculate(&mut source, &hash));
 
         let mut source = vec![vec!['a'], vec!['b'], vec!['c']].into_iter().peekable();
         assert_eq!(
