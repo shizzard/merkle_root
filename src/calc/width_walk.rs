@@ -2,7 +2,7 @@
 //! Implements a depth-walk merkle tree root calculation.
 //!
 //! Time complexity: O(n*log(n))
-//! Space complexity: O(n*log(n))
+//! Space complexity: O(n)
 //!
 //! The algorithm structures the merkle tree as a tree with arbitrary height
 //!
