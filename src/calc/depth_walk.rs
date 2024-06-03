@@ -30,55 +30,49 @@ use std::iter::Peekable;
 
 pub struct DepthWalk;
 
-impl super::MerkleTreeRoot for DepthWalk {
-    fn calculate<I, H, F>(source: &mut Peekable<I>, hash_fn: &F) -> H
+impl DepthWalk {
+    pub fn calculate<I, H, F>(source: &mut Peekable<I>, hash_fn: &F) -> H
     where
         I: Iterator<Item = H>,
         F: Fn(&H, Option<&H>) -> H,
-        F: Sync + Send,
-        H: Sync + Send,
     {
         let left = source.next().expect("Expected source not to be empty");
         match source.peek() {
             None => left,
-            Some(_) => walk_up(1, left, source, hash_fn),
+            Some(_) => Self::walk_up(1, left, source, hash_fn),
         }
     }
-}
 
-fn walk_up<I, H, F>(height: usize, left: H, source: &mut Peekable<I>, hash_fn: &F) -> H
-where
-    I: Iterator<Item = H>,
-    F: Fn(&H, Option<&H>) -> H,
-    F: Sync + Send,
-    H: Sync + Send,
-{
-    let right = walk_down(height - 1, source, hash_fn);
-    let hash = hash_fn(&left, right.as_ref());
-    match source.peek() {
-        // source still contains hash to continue
-        Some(_) => walk_up(height + 1, hash, source, hash_fn),
-        // no hashes left in the source, return the root
-        None => hash,
+    fn walk_up<I, H, F>(height: usize, left: H, source: &mut Peekable<I>, hash_fn: &F) -> H
+    where
+        I: Iterator<Item = H>,
+        F: Fn(&H, Option<&H>) -> H,
+    {
+        let right = Self::walk_down(height - 1, source, hash_fn);
+        let hash = hash_fn(&left, right.as_ref());
+        match source.peek() {
+            // source still contains hash to continue
+            Some(_) => Self::walk_up(height + 1, hash, source, hash_fn),
+            // no hashes left in the source, return the root
+            None => hash,
+        }
     }
-}
 
-fn walk_down<I, H, F>(height: usize, source: &mut Peekable<I>, hash_fn: &F) -> Option<H>
-where
-    I: Iterator<Item = H>,
-    F: Fn(&H, Option<&H>) -> H,
-    F: Sync + Send,
-    H: Sync + Send,
-{
-    if height == 0 {
-        // we're at the very bottom of the tree, collect the hash from the source
-        source.next()
-    } else {
-        // recurse down once again
-        Some(hash_fn(
-            &walk_down(height - 1, source, hash_fn)?,
-            walk_down(height - 1, source, hash_fn).as_ref(),
-        ))
+    fn walk_down<I, H, F>(height: usize, source: &mut Peekable<I>, hash_fn: &F) -> Option<H>
+    where
+        I: Iterator<Item = H>,
+        F: Fn(&H, Option<&H>) -> H,
+    {
+        if height == 0 {
+            // we're at the very bottom of the tree, collect the hash from the source
+            source.next()
+        } else {
+            // recurse down once again
+            Some(hash_fn(
+                &Self::walk_down(height - 1, source, hash_fn)?,
+                Self::walk_down(height - 1, source, hash_fn).as_ref(),
+            ))
+        }
     }
 }
 
@@ -90,8 +84,6 @@ where
 /// hash(vec!['a'], Some(vec!['b'])) => vec!['a', 'b']
 #[cfg(test)]
 mod tests {
-    use crate::calc::MerkleTreeRoot;
-
     use super::*;
 
     fn hash(left: &Vec<char>, right: Option<&Vec<char>>) -> Vec<char> {

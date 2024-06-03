@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use merkle_root::calc::{depth_walk::DepthWalk, hash, width_walk::WidthWalk, MerkleTreeRoot};
+use merkle_root::calc::{depth_walk::DepthWalk, hash, width_walk::WidthWalk};
 use merkle_root::source::SourceReader;
 
 #[derive(Parser, Debug)]

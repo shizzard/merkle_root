@@ -1,6 +1,6 @@
 use merkle_root::calc::depth_walk::DepthWalk;
+use merkle_root::calc::hash;
 use merkle_root::calc::width_walk::WidthWalk;
-use merkle_root::calc::{hash, MerkleTreeRoot};
 use merkle_root::source::SourceReader;
 
 #[allow(unused_imports)]

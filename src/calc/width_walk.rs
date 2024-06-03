@@ -29,8 +29,8 @@ use std::iter::Peekable;
 
 pub struct WidthWalk;
 
-impl super::MerkleTreeRoot for WidthWalk {
-    fn calculate<I, H, F>(source: &mut Peekable<I>, hash_fn: &F) -> H
+impl WidthWalk {
+    pub fn calculate<I, H, F>(source: &mut Peekable<I>, hash_fn: &F) -> H
     where
         I: Iterator<Item = H>,
         F: Fn(&H, Option<&H>) -> H,
@@ -41,30 +41,30 @@ impl super::MerkleTreeRoot for WidthWalk {
         if layer.len() == 0 {
             panic!("Expected source not to be empty");
         }
-        walk_layers(layer, hash_fn)
+        Self::walk_layers(layer, hash_fn)
     }
-}
 
-fn walk_layers<H, F>(mut layer: Vec<H>, hash_fn: &F) -> H
-where
-    F: Fn(&H, Option<&H>) -> H,
-    F: Sync + Send,
-    H: Sync + Send,
-{
-    if layer.len() == 1 {
-        return layer.pop().unwrap();
+    fn walk_layers<H, F>(mut layer: Vec<H>, hash_fn: &F) -> H
+    where
+        F: Fn(&H, Option<&H>) -> H,
+        F: Sync + Send,
+        H: Sync + Send,
+    {
+        if layer.len() == 1 {
+            return layer.pop().unwrap();
+        }
+        let next_layer = layer
+            .par_chunks(2)
+            .map(|chunk| {
+                if chunk.len() == 2 {
+                    hash_fn(&chunk[0], Some(&chunk[1]))
+                } else {
+                    hash_fn(&chunk[0], None)
+                }
+            })
+            .collect();
+        Self::walk_layers(next_layer, hash_fn)
     }
-    let next_layer = layer
-        .par_chunks(2)
-        .map(|chunk| {
-            if chunk.len() == 2 {
-                hash_fn(&chunk[0], Some(&chunk[1]))
-            } else {
-                hash_fn(&chunk[0], None)
-            }
-        })
-        .collect();
-    walk_layers(next_layer, hash_fn)
 }
 
 ///
@@ -75,8 +75,6 @@ where
 /// hash(vec!['a'], Some(vec!['b'])) => vec!['a', 'b']
 #[cfg(test)]
 mod tests {
-    use crate::calc::MerkleTreeRoot;
-
     use super::*;
 
     fn hash(left: &Vec<char>, right: Option<&Vec<char>>) -> Vec<char> {

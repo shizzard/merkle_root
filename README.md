@@ -14,12 +14,12 @@ Assumptions made for the input file:
 In order to calculate the hash of the node (which contains a pair of hashes),
 values of the containing hashes are concatenated.
 
-If the node contains only left hash (if the number of hashes in the file is not
-equal to the power of two), its value is reused as the right hash.
+If the node contains only a left hash (if the number of hashes in the file is
+not equal to the power of two), its value is reused as the right hash.
 
 #### Build
 
-```
+```bash
 cargo build -r
 ```
 
@@ -33,15 +33,16 @@ Options:
   -m, --mode <MODE>  Calculation mode (default: depth-walk) [possible values: depth-walk, width-walk]
   -h, --help         Print help (see more with '--help')
   -V, --version      Print version
+
 ```
 
 #### Algorithms
 
-All algorithms will be O(n\*log(n)) time complexity, because there is not other
+All algorithms will be O(n\*log(n)) time complexity, because there is no other
 way to calculate the root hash except to traverse all the paired hashes from the
-very bottom of the tree, until calculation converge into a single hash. The only
-difference between algoritms is space complexity and possibility to utilize
-parallel calculations.
+very bottom of the tree, until calculation converges into a single hash. The
+only difference between algorithms is space complexity and the possibility to
+utilize parallel calculations.
 
 1. Depth-walk
 
@@ -49,23 +50,23 @@ Time complexity: O(n\*log(n)), sequential only.
 
 Space complexity: O(log(n)).
 
-The idea of this algorithm is to traverse the merkle tree depth-first, starting
+The idea of this algorithm is to traverse the Merkle tree depth-first, starting
 from the left and recursively calculating the right branch until the list of
-hashes ends. This allows reading the hashes from file one by one, reducing the
-memory footprint.
+hashes ends. This allows reading the hashes from the file one by one, reducing
+the memory footprint.
 
 Usage: `target/release/merkle_root -f input.txt -m depth-walk`
 
 1. Width-walk
 
-Time complexity: \*O(n\*log(n)), parallel.
+Time complexity: O(n\*log(n)), parallel.
 
 Space complexity: O(n).
 
 The idea of this algorithm is to read all the hashes into memory and calculate
-the merkle tree layer by layer, until it converge into a single hash. This opens
-possibilities to utilize parallel calculations, which speeds up the program,
-requiring much more memory.
+the Merkle tree layer by layer, until it converges into a single hash. This
+opens possibilities to utilize parallel calculations, which speeds up the
+program, requiring much more memory.
 
 Usage: `target/release/merkle_root -f input.txt -m width-walk`
 
@@ -77,9 +78,9 @@ cargo test
 
 #### Microbenches
 
-NB: all microbenchmarks were done on a Apple MacBook Pro M1 with 8 active cores.
-Absolute numbers are of no interest here, the only interesting thing is how
-results differ depending on algorithm used.
+NB: all microbenchmarks were done on an Apple MacBook Pro M1 with 8 active
+cores. Absolute numbers are of no interest here, the only interesting thing is
+how results differ depending on the algorithm used.
 
 1. Time benches
 
@@ -87,13 +88,13 @@ results differ depending on algorithm used.
 cargo bench
 ```
 
-Depth-walk algorithm performs calculations in ~6.5 ms. Width-walk algorithm
-performs calculations in ~2 ms, 3.5x times faster.
+The depth-walk algorithm performs calculations in ~6.5 ms. The width-walk
+algorithm performs calculations in ~2 ms, 3.5x times faster.
 
 1. Memory benches
 
-I didn't find any simple way to perform memory benches with criterion crate, so
-I used the `time` utility to find some numbers.
+I didn't find any simple way to perform memory benches with the criterion crate,
+so I used the time utility to find some numbers.
 
 Example:
 
@@ -101,27 +102,27 @@ Example:
 /usr/bin/time -l target/release/merkle_root -f input.txt -m width-walk
 ```
 
-In order to find out how much memory program consumes on itself, I used the
+In order to find out how much memory the program consumes on itself, I used the
 `input_minimal.txt` as a list of hashes. This file contains only one hash, and
 both algorithms just return the single hash without any calculations. With both
-algorithms the peak memory footprint was the same, 1016576 bytes. I will refer
-to this number as the base footprint.
+algorithms, the peak memory footprint was the same, `1016576` bytes. I will
+refer to this number as the base footprint.
 
-Running the depth-walk algorithm on input.txt resulted in 1114944 bytes of peak
-memory footprint, which corresponds to 98368 bytes of overhead. Width-walk
-algorithm in the same input resulted in 3163264 (average) bytes of peak memory
-footprint, which corresponds to 2146688 bytes overhead, which is approximately
-x22 times more.
+Running the depth-walk algorithm on `input.txt` resulted in `1114944` bytes of
+peak memory footprint, which corresponds to `98368` bytes of overhead. The
+width-walk algorithm on the same input resulted in `3163264` (average) bytes of
+peak memory footprint, which corresponds to `2146688` bytes overhead, which is
+approximately 22 times more.
 
 #### Alternative algoritms
 
 1. In-place calculation
 
-It is possible to perform Markle Tree root calculation in-place (within a file,
+It is possible to perform Merkle Tree root calculation in-place (within a file,
 modifying and truncating it). This will have the same time complexity as any
 other algorithm, but will have outstanding O(1) space complexity. Despite time
-complexity is the same, overall performance will be poor due to a large number
-of disk operations.
+complexity being the same, overall performance will be poor due to a large
+number of disk operations.
 
 2. GPU calculation
 

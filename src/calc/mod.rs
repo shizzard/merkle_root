@@ -1,26 +1,8 @@
 use crate::Hash;
 use sha2::{Digest, Sha256};
-use std::iter::Peekable;
 
 pub mod depth_walk;
 pub mod width_walk;
-
-///
-/// Generic Merkle Tree root calculator trait.
-pub trait MerkleTreeRoot {
-    ///
-    /// The entry point to calculate the Merkle Tree root with the given
-    /// strategy.
-    ///
-    /// The function signature contains three generic parameters to simplify
-    /// tests by mocking the hash type and the hash function.
-    fn calculate<I, H, F>(source: &mut Peekable<I>, hash_fn: &F) -> H
-    where
-        I: Iterator<Item = H>,
-        F: Fn(&H, Option<&H>) -> H,
-        F: Sync + Send,
-        H: Sync + Send;
-}
 
 ///
 /// Calculates the hash of node, given the left and right branch hashes.
@@ -37,7 +19,7 @@ pub trait MerkleTreeRoot {
 /// let right = [1u8; 32];
 ///
 /// let result = hash(&left, Some(&right)); // hashing with both branches
-/// let result = hash(&left, None);        // hashing with the empty right branch
+/// let result = hash(&left, None);         // hashing with the empty right branch
 /// let result = hash(&left, Some(&left));  // same result
 /// ```
 pub fn hash(left: &Hash, right: Option<&Hash>) -> Hash {
